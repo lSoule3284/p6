@@ -130,7 +130,7 @@ const Status ScanSelect(const string & result,
             memcpy(outputData + offset, (char *)relRec.data + projNames[i].attrOffset, projNames[i].attrLen);
             offset += projNames[i].attrLen;
         }
-        //insert the new record into our 
+        //insert the new record into our output buffer
         RID outRID;
         status = resultRel.insertRecord(returnedRec, outRID);
         if (status != OK) {
