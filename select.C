@@ -11,6 +11,16 @@ const Status ScanSelect(const string & result,
 			const char *filter,
 			const int recordlen);
 
+/*
+ * Selects records from the specified relation.
+ * A selection is implemented using a filtered HeapFileScan.  The result of the selection is stored in the result relation table
+ * The project list is defined by the parameters projCnt and projNames.  Projection should be done on the fly as each result tuple is being appended to the result table.  
+ * we convert it to the proper type based on the type of attr. If attr is NULL, an unconditional scan of the input table should be performed.
+ * Returns:
+ * 	OK on success
+ * 	an error code otherwise
+ */
+
 const Status QU_Select(const string & result,
         const int projCnt,
         const attrInfo projNames[],
@@ -83,6 +93,13 @@ const Status QU_Select(const string & result,
 }
 
 
+/*
+ * Scan our relation based on the provided filter.
+ * Then adds it to a relation named "result"
+ * Returns:
+ * 	OK on success
+ * 	an error code otherwise
+ */
 
 const Status ScanSelect(const string & result,
         const int projCnt,
