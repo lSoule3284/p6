@@ -3,21 +3,13 @@
 
 
 // forward declaration
-const Status ScanSelect(const string & result, 
-			const int projCnt, 
+const Status ScanSelect(const string & result,
+			const int projCnt,
 			const AttrDesc projNames[],
-			const AttrDesc *attrDesc, 
-			const Operator op, 
+			const AttrDesc *attrDesc,
+			const Operator op,
 			const char *filter,
-			const int reclen);
-
-/*
- * Selects records from the specified relation.
- *
- * Returns:
- * 	OK on success
- * 	an error code otherwise
- */
+			const int recordlen);
 
 const Status QU_Select(const string & result,
         const int projCnt,
@@ -48,9 +40,9 @@ const Status QU_Select(const string & result,
     if (attr != NULL) {
         status = attrCat->getInfo(string(attr->relName), string(attr->attrName), attrDesc);
         if (status != OK) {
-        cerr << "Error: Status produced an error before case switching." << endl;
-        return status;
-        }
+            cerr << "Error: Status produced an error before case switching." << endl;
+            return status;
+            }
         int tempoInt;
         float tempoFloat;
         switch (attr->attrType) {
@@ -77,7 +69,7 @@ const Status QU_Select(const string & result,
         tempEQ = op;
 
     } else {// having a null indicates that we will be missing WHERE clause
-        //hence, we set everything to default values
+        //hence, we set everything to the default values for our unconditional scan
         attrDesc.attrOffset = 0;
         attrDesc.attrLen = 0;
         attrDesc.attrType = STRING;
@@ -86,25 +78,70 @@ const Status QU_Select(const string & result,
         filter = NULL;
         tempEQ = EQ;
     }
+    //relay onto 2nd select function
     status = ScanSelect(result, projCnt, tempAttrDesc, &attrDesc, tempEQ, filter, recordlen);
     if (status != OK) { 
         return status; 
         }
+    //OK on success
     return OK;
 }
 
 
-const Status ScanSelect(const string & result, 
-#include "stdio.h"
-#include "stdlib.h"
-			const int projCnt, 
-			const AttrDesc projNames[],
-			const AttrDesc *attrDesc, 
-			const Operator op, 
-			const char *filter,
-			const int reclen)
+
+const Status ScanSelect(const string & result,
+        const int projCnt,
+        const AttrDesc projNames[],
+        const AttrDesc *attrDesc,
+        const Operator op,
+        const char *filter,
+        const int recordlen)
 {
-    cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
-
-
+    #include "stdio.h"
+    #include "stdlib.h"
+    int resultTupCnt = 0; //temp variable to count tuples
+    Status status;
+    int offset = 0;
+    InsertFileScan resultRel(result, status); //open result table
+    if (status != OK) { 
+        return status; //return false if not opened properly
+        }
+    char outputData[recordlen]; //pointer of the location of recordlen
+    Record returnedRec; 
+    returnedRec.data = (void *) outputData; //cast unto data
+    returnedRec.length = recordlen;
+    // prepare for scan on outer table
+    HeapFileScan relScan(attrDesc->relName, status);
+    if (status != OK) {
+        delete[] outputData;
+        return status; 
+        }
+    status = relScan.startScan(attrDesc->attrOffset, attrDesc->attrLen, (Datatype) attrDesc->attrType, filter, op);
+    if (status != OK) { 
+        delete[] outputData;
+        return status; 
+        }
+    // initiate outer table scan
+    RID relRID;
+    Record relRec;
+    while (relScan.scanNext(relRID) == OK) {
+        status = relScan.getRecord(relRec);
+        offset = 0;
+        if (status != OK) {
+        return status; 
+        }
+        //copy all data from relREC into our offset buffer using the projNames for reference
+        for (int i = 0; i < projCnt; i++) {
+            memcpy(outputData + offset, (char *)relRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            offset += projNames[i].attrLen;
+        }
+        //insert the new record into our 
+        RID outRID;
+        status = resultRel.insertRecord(returnedRec, outRID);
+        if (status != OK) {
+        return status; 
+        }
+        resultTupCnt = resultTupCnt + 1;
+    }
+    return OK;
 }
