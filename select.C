@@ -9,7 +9,7 @@ const Status ScanSelect(const string & result,
 			const AttrDesc *attrDesc,
 			const Operator op,
 			const char *filter,
-			const int recordlen);
+			const int reclen);
 
 /*
  * Selects records from the specified relation.
@@ -31,7 +31,7 @@ const Status QU_Select(const string & result,
     Status status;
     AttrDesc attrDesc;
     AttrDesc* tempAttrDesc;
-    int recordlen = 0;
+    int reclen = 0;
     Operator tempEQ;
     const char* filter;
     tempAttrDesc = new AttrDesc[projCnt]; //hold desc of attributes
@@ -45,7 +45,7 @@ const Status QU_Select(const string & result,
             delete[] tempAttrDesc;
             return status; 
             }
-        recordlen += tempAttrDesc[i].attrLen;
+        reclen += tempAttrDesc[i].attrLen;
     }
     //begin checking attributes to initiate our SELECT
     if (attr != NULL) {
@@ -84,7 +84,7 @@ const Status QU_Select(const string & result,
         tempEQ = EQ;
     }
     //relay onto 2nd select function
-    status = ScanSelect(result, projCnt, tempAttrDesc, &attrDesc, tempEQ, filter, recordlen);
+    status = ScanSelect(result, projCnt, tempAttrDesc, &attrDesc, tempEQ, filter, reclen);
     if (status != OK) { 
         return status; 
         }
@@ -107,21 +107,21 @@ const Status ScanSelect(const string & result,
         const AttrDesc *attrDesc,
         const Operator op,
         const char *filter,
-        const int recordlen)
+        const int reclen)
 {
     #include "stdio.h"
     #include "stdlib.h"
-    int resultTupCnt = 0; //temp variable to count tuples
+    int tupilecount = 0; //temp variable to count tuples
     Status status;
     int offset = 0;
     InsertFileScan resultRel(result, status); //open result relation
     if (status != OK) { 
         return status; //return false if not opened properly
         }
-    char outputData[recordlen]; //pointer of the location of recordlen
+    char outputData[reclen]; //pointer of the location of reclen
     Record returnedRec; 
     returnedRec.data = (void *) outputData; //cast unto data
-    returnedRec.length = recordlen;
+    returnedRec.length = reclen;
     // prepare for scan on outer table
     HeapFileScan relScan(attrDesc->relName, status);
     if (status != OK) {
@@ -153,7 +153,7 @@ const Status ScanSelect(const string & result,
         if (status != OK) {
         return status; 
         }
-        resultTupCnt = resultTupCnt + 1;
+        tupilecount = tupilecount + 1;
     }
     return OK;
 }
