@@ -25,6 +25,8 @@ const Status QU_Select(const string & result,
     Operator tempEQ;
     const char* filter;
     tempAttrDesc = new AttrDesc[projCnt]; //hold desc of attributes
+    int tempoInt; //holders to convert attr to proper types
+    float tempoFloat; //holders to convert attr to proper types
 
     //loop to find the lngth of the records
     for (int i = 0; i < projCnt; i++) {
@@ -35,7 +37,6 @@ const Status QU_Select(const string & result,
             }
         recordlen += tempAttrDesc[i].attrLen;
     }
-
     //begin checking attributes to initiate our SELECT
     if (attr != NULL) {
         status = attrCat->getInfo(string(attr->relName), string(attr->attrName), attrDesc);
@@ -43,28 +44,22 @@ const Status QU_Select(const string & result,
             cerr << "Error: Status produced an error before case switching." << endl;
             return status;
             }
-        int tempoInt;
-        float tempoFloat;
         switch (attr->attrType) {
             //ensure proper data types
-            case INTEGER:
-                if (!convertToInt(attrValue, tempoInt)) {
-                    return ERR_BAD_VALUE;
-                    }
-                filter = (char*)&tempoInt;
-                break;
             case FLOAT:
-                if (!convertToFloat(attrValue, tempoFloat)) {
-                    return ERR_BAD_VALUE;
-                    }
+                tempoFloat = atof(attrValue);
                 filter = (char*)&tempoFloat;
+                break;
+            case INTEGER:
+                tempoInt = atoi(attrValue);
+                filter = (char*)&tempoInt;
                 break;
             case STRING:
                 filter = attrValue;
                 break;
             //in case no proper data type found
             default:
-                return ERR_BAD_VALUE;
+                cerr << "Error: Improper data type found." << endl;
         }
         tempEQ = op;
 
