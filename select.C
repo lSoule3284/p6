@@ -114,7 +114,7 @@ const Status ScanSelect(const string & result,
     int resultTupCnt = 0; //temp variable to count tuples
     Status status;
     int offset = 0;
-    InsertFileScan resultRel(result, status); //open result table
+    InsertFileScan resultRel(result, status); //open result relation
     if (status != OK) { 
         return status; //return false if not opened properly
         }
