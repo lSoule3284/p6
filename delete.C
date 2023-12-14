@@ -86,5 +86,6 @@ const Status QU_Delete(const string & relation,
         countOfDeletedTuples++;
     }
 
+    // Success
     return OK;
 }
